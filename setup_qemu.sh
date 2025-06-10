@@ -17,7 +17,7 @@ read -p "Link tải file ISO: " ISO_LINK
 ISO_NAME=$(basename "$ISO_LINK")
 DISK_NAME="vm_disk.qcow2"
 
-# Cài qemu nếu chưa có
+# Cài qemu nếu chưa có (dùng sudo)
 if ! command -v qemu-system-x86_64 &> /dev/null; then
     echo "Đang cài đặt QEMU..."
     apt update && apt install -y qemu-kvm qemu-utils wget
@@ -64,7 +64,10 @@ else
 fi
 
 sed -i '$ s/ \\$//' start.sh
-
 chmod +x start.sh
+
+USER_NAME=$(logname)
+
+chown $USER_NAME:$USER_NAME start.sh "$ISO_NAME" "$DISK_NAME"
 
 echo "✅ Đã tạo xong! Chạy máy ảo bằng lệnh: ./start.sh"
