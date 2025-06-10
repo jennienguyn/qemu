@@ -5,34 +5,48 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-echo "=== CẤU HÌNH QEMU ==="
-read -p "Số nhân bạn muốn dùng: " CPUS
-read -p "Số luồng bạn muốn dùng: " THREADS
-read -p "Kích hoạt VNC [Y/N]: " VNC
-read -p "Chế độ mạng [NAT/Bridge]: " NET_MODE
-read -p "Số RAM bạn muốn dùng (ví dụ: 2048 cho 2GB): " RAM
-read -p "Dung lượng ổ cứng (GB): " DISK_SIZE
-read -p "Link tải file ISO: " ISO_LINK
+echo "=== CẤU HÌNH MÁY ẢO QEMU ==="
+read -p "Tổng số CPU (vCPU) bạn muốn dùng cho máy ảo (ví dụ: 2): " TOTAL_VCPUS
+read -p "Số RAM bạn muốn dùng (ví dụ: 2G cho 2GB, 512M cho 512MB): " RAM_SIZE
+read -p "Dung lượng ổ cứng (ví dụ: 20G cho 20GB): " DISK_SIZE
+read -p "Link tải file ISO của bạn: " ISO_LINK
+read -p "Kích hoạt truy cập VNC (Y/N, nếu N sẽ hiển thị trực tiếp trên console): " VNC_ENABLE
+read -p "Chế độ mạng (NAT/Bridge): " NET_MODE
 
-ISO_NAME=$(basename "$ISO_LINK")
-DISK_NAME="vm_disk.qcow2"
+ISO_FILENAME=$(basename "$ISO_LINK")
+DISK_FILENAME="vm_disk.qcow2"
 
-# Cài qemu nếu chưa có (dùng sudo)
 if ! command -v qemu-system-x86_64 &> /dev/null; then
-    echo "Đang cài đặt QEMU..."
-    apt update && apt install -y qemu-kvm qemu-utils wget
+    echo "QEMU chưa được cài đặt. Đang tiến hành cài đặt..."
+    apt update && apt install -y qemu-system-x86 qemu-utils wget
+    if [ $? -ne 0 ]; then
+        echo "Lỗi: Không thể cài đặt QEMU. Vui lòng kiểm tra lại kết nối mạng hoặc quyền sudo."
+        exit 1
+    fi
+else
+    echo "QEMU đã được cài đặt."
 fi
 
-echo "Đang tải ISO..."
-wget -O "$ISO_NAME" "$ISO_LINK"
+if [ ! -f "$ISO_FILENAME" ]; then
+    echo "Đang tải file ISO từ $ISO_LINK..."
+    wget -O "$ISO_FILENAME" "$ISO_LINK"
+    if [ $? -ne 0 ]; then
+        echo "Lỗi: Không thể tải file ISO. Vui lòng kiểm tra lại đường dẫn."
+        exit 1
+    fi
+else
+    echo "File ISO $ISO_FILENAME đã tồn tại."
+fi
 
-echo "Đang tạo ổ đĩa ảo $DISK_NAME với dung lượng ${DISK_SIZE}G..."
-qemu-img create -f qcow2 "$DISK_NAME" "${DISK_SIZE}G"
-
-# Tính số cores từ CPUS và THREADS, đảm bảo cores >=1
-CORES=$((CPUS / THREADS))
-if [[ $CORES -lt 1 ]]; then
-  CORES=1
+if [ ! -f "$DISK_FILENAME" ]; then
+    echo "Đang tạo ổ đĩa ảo $DISK_FILENAME với dung lượng $DISK_SIZE..."
+    qemu-img create -f qcow2 "$DISK_FILENAME" "$DISK_SIZE"
+    if [ $? -ne 0 ]; then
+        echo "Lỗi: Không thể tạo ổ đĩa ảo."
+        exit 1
+    fi
+else
+    echo "Ổ đĩa ảo $DISK_FILENAME đã tồn tại."
 fi
 
 echo "Đang tạo file start.sh..."
@@ -42,32 +56,34 @@ cat << EOF > start.sh
 
 qemu-system-x86_64 \\
   -enable-kvm \\
-  -m $RAM \\
-  -smp sockets=1,cores=$CORES,threads=$THREADS \\
-  -hda $DISK_NAME \\
-  -cdrom $ISO_NAME \\
+  -m "$RAM_SIZE" \\
+  -smp "$TOTAL_VCPUS" \\
+  -hda "$DISK_FILENAME" \\
+  -cdrom "$ISO_FILENAME" \\
   -boot d \\
 EOF
 
-if [[ "$VNC" == "Y" || "$VNC" == "y" ]]; then
-  echo "  -vnc :1 \\" >> start.sh
+if [[ "$VNC_ENABLE" == "Y" || "$VNC_ENABLE" == "y" ]]; then
+  echo "  -vnc :0 \\" >> start.sh
 else
   echo "  -display default \\" >> start.sh
 fi
 
 if [[ "$NET_MODE" == "Bridge" || "$NET_MODE" == "bridge" ]]; then
-  echo "  -netdev bridge,id=net0,br=br0 \\" >> start.sh
-  echo "  -device e1000,netdev=net0 \\" >> start.sh
+  read -p "Nhập tên bridge của bạn (ví dụ: br0, nếu không có hãy tạo hoặc để trống để sử dụng mặc định br0): " BRIDGE_NAME_INPUT
+  BRIDGE_NAME="${BRIDGE_NAME_INPUT:-br0}"
+  echo "  -netdev bridge,id=net0,br=$BRIDGE_NAME \\" >> start.sh
+  echo "  -device virtio-net-pci,netdev=net0 \\" >> start.sh
 else
   echo "  -netdev user,id=net0 \\" >> start.sh
-  echo "  -device e1000,netdev=net0 \\" >> start.sh
+  echo "  -device virtio-net-pci,netdev=net0" >> start.sh
 fi
 
-sed -i '$ s/ \\$//' start.sh
+if [[ "$NET_MODE" == "Bridge" || "$NET_MODE" == "bridge" ]]; then
+    sed -i '$ s/ \\$//' start.sh
+fi
+
 chmod +x start.sh
 
-USER_NAME=$(logname)
-
-chown $USER_NAME:$USER_NAME start.sh "$ISO_NAME" "$DISK_NAME"
-
-echo "✅ Đã tạo xong! Chạy máy ảo bằng lệnh: ./start.sh"
+echo "✅ Đã tạo xong file start.sh. Bạn có thể chạy máy ảo bằng lệnh: ./start.sh"
+echo "Lưu ý: Để cài đặt hệ điều hành, máy ảo sẽ boot từ ISO. Sau khi cài đặt xong, bạn có thể chỉnh sửa file start.sh để bỏ dòng '-cdrom' hoặc thay đổi '-boot d' thành '-boot c' để boot từ ổ cứng."
