@@ -18,9 +18,9 @@ DISK_FILENAME="vm_disk.qcow2"
 
 if ! command -v qemu-system-x86_64 &> /dev/null; then
     echo "QEMU chưa được cài đặt. Đang tiến hành cài đặt..."
-    apt update && apt install -y qemu-system-x86 qemu-utils wget
+    apt update && apt install -y qemu-system-x86 qemu-utils wget curl
     if [ $? -ne 0 ]; then
-        echo "Lỗi: Không thể cài đặt QEMU. Vui lòng kiểm tra lại kết nối mạng hoặc quyền sudo."
+        echo "Lỗi: Không thể cài đặt QEMU, wget hoặc curl. Vui lòng kiểm tra lại kết nối mạng hoặc quyền sudo."
         exit 1
     fi
 else
@@ -28,11 +28,15 @@ else
 fi
 
 if [ ! -f "$ISO_FILENAME" ]; then
-    echo "Đang tải file ISO từ $ISO_LINK..."
+    echo "Đang tải file ISO từ $ISO_LINK bằng wget..."
     wget -O "$ISO_FILENAME" "$ISO_LINK"
     if [ $? -ne 0 ]; then
-        echo "Lỗi: Không thể tải file ISO. Vui lòng kiểm tra lại đường dẫn."
-        exit 1
+        echo "wget thất bại. Thử lại bằng curl..."
+        curl -L -o "$ISO_FILENAME" "$ISO_LINK"
+        if [ $? -ne 0 ]; then
+            echo "Lỗi: Không thể tải file ISO bằng cả wget và curl. Vui lòng kiểm tra lại đường dẫn hoặc kết nối mạng."
+            exit 1
+        fi
     fi
 else
     echo "File ISO $ISO_FILENAME đã tồn tại."
