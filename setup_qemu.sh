@@ -17,9 +17,10 @@ read -p "Link tải file ISO: " ISO_LINK
 ISO_NAME=$(basename "$ISO_LINK")
 DISK_NAME="vm_disk.qcow2"
 
+# Cài qemu nếu chưa có
 if ! command -v qemu-system-x86_64 &> /dev/null; then
     echo "Đang cài đặt QEMU..."
-    apt update && apt install -y qemu-kvm qemu-utils
+    apt update && apt install -y qemu-kvm qemu-utils wget
 fi
 
 echo "Đang tải ISO..."
@@ -27,6 +28,12 @@ wget -O "$ISO_NAME" "$ISO_LINK"
 
 echo "Đang tạo ổ đĩa ảo $DISK_NAME với dung lượng ${DISK_SIZE}G..."
 qemu-img create -f qcow2 "$DISK_NAME" "${DISK_SIZE}G"
+
+# Tính số cores từ CPUS và THREADS, đảm bảo cores >=1
+CORES=$((CPUS / THREADS))
+if [[ $CORES -lt 1 ]]; then
+  CORES=1
+fi
 
 echo "Đang tạo file start.sh..."
 
@@ -36,7 +43,7 @@ cat << EOF > start.sh
 qemu-system-x86_64 \\
   -enable-kvm \\
   -m $RAM \\
-  -smp cpus=$CPUS,threads=$THREADS \\
+  -smp sockets=1,cores=$CORES,threads=$THREADS \\
   -hda $DISK_NAME \\
   -cdrom $ISO_NAME \\
   -boot d \\
@@ -56,5 +63,8 @@ else
   echo "  -device e1000,netdev=net0 \\" >> start.sh
 fi
 
+sed -i '$ s/ \\$//' start.sh
+
 chmod +x start.sh
+
 echo "✅ Đã tạo xong! Chạy máy ảo bằng lệnh: ./start.sh"
