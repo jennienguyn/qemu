@@ -1,22 +1,19 @@
 #!/bin/bash
 
-install_qemu() {
-  if ! command -v qemu-system-x86_64 > /dev/null; then
-    echo "QEMU chưa được cài đặt, bắt đầu cài đặt..."
-    sudo apt update
-    sudo apt install -y qemu qemu-system-x86 qemu-utils
-    if [ $? -ne 0 ]; then
-      echo "Cài đặt QEMU thất bại, vui lòng kiểm tra kết nối mạng hoặc quyền sudo."
-      exit 1
-    fi
-    echo "Đã cài đặt QEMU thành công."
-  else
-    echo "QEMU đã được cài đặt."
-  fi
-}
+if [ "$EUID" -ne 0 ]; then
+  echo "Vui lòng chạy script với quyền root (sudo)."
+  exit 1
+fi
 
-# Gọi hàm cài đặt QEMU
-install_qemu
+echo "Kiểm tra và cài đặt QEMU nếu chưa có..."
+if ! command -v qemu-system-x86_64 > /dev/null; then
+  apt update
+  apt install -y qemu qemu-system-x86 qemu-utils
+  if [ $? -ne 0 ]; then
+    echo "Cài đặt QEMU thất bại."
+    exit 1
+  fi
+fi
 
 echo "Số nhân bạn muốn dùng:"
 read CPUS
