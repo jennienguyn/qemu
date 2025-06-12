@@ -95,10 +95,17 @@ fi
 
 echo "  -net nic,model=$NET_CARD \\" >> "$OUT_FILE"
 echo "  -net user \\" >> "$OUT_FILE"
-echo "  -device $AUDIO_CARD \\" >> "$OUT_FILE"
+
+if [[ "$AUDIO_CARD" == "none" ]]; then
+  echo "  -audiodev none,id=noaudio \\" >> "$OUT_FILE"
+else
+  echo "  -audiodev none,id=audio0 \\" >> "$OUT_FILE"
+  echo "  -device $AUDIO_CARD,audiodev=audio0 \\" >> "$OUT_FILE"
+fi
+
 echo "  -drive file=$QCOW_NAME,format=qcow2 \\" >> "$OUT_FILE"
 echo "  -cdrom $ISO_NAME \\" >> "$OUT_FILE"
-echo "  -boot d" >> "$OUT_FILE"
+echo "  -boot d" >> "$OUT_FILE
 
 chmod +x "$OUT_FILE"
 echo "Đã tạo file script chạy QEMU: $OUT_FILE"
