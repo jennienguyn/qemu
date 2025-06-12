@@ -1,10 +1,34 @@
 #!/bin/bash
 
+# Hàm kiểm tra và cài QEMU trên Debian/Ubuntu
+install_qemu() {
+  if ! command -v qemu-system-x86_64 > /dev/null; then
+    echo "QEMU chưa được cài đặt, bắt đầu cài đặt..."
+    sudo apt update
+    sudo apt install -y qemu qemu-system-x86 qemu-utils
+    if [ $? -ne 0 ]; then
+      echo "Cài đặt QEMU thất bại, vui lòng kiểm tra kết nối mạng hoặc quyền sudo."
+      exit 1
+    fi
+    echo "Đã cài đặt QEMU thành công."
+  else
+    echo "QEMU đã được cài đặt."
+  fi
+}
+
+# Gọi hàm cài đặt QEMU
+install_qemu
+
 echo "Số nhân bạn muốn dùng:"
 read CPUS
 
 echo "Số ram bạn muốn dùng (2G cho 2GB, 2048M cho 2GB):"
 read RAM
+# Kiểm tra định dạng RAM
+if [[ ! "$RAM" =~ ^[0-9]+(G|M)$ ]]; then
+  echo "Bạn phải nhập RAM dạng số kèm G hoặc M, ví dụ: 2G hoặc 2048M"
+  exit 1
+fi
 
 echo "Bạn có muốn dùng vnc không (Y, N):"
 read USE_VNC
