@@ -41,7 +41,7 @@ fi
 read -p "Card âm thanh bạn muốn dùng (nhập listaudio để xem các card audio có sẵn trong qemu): " AUDIO_CARD
 if [ "$AUDIO_CARD" == "listaudio" ]; then
   echo "Danh sách card âm thanh có sẵn:"
-  qemu-system-x86_64 -soundhw help
+  qemu-system-x86_64 -device help | grep audio
   exit 0
 fi
 
