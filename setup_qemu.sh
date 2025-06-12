@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Hàm kiểm tra và cài QEMU trên Debian/Ubuntu
 install_qemu() {
   if ! command -v qemu-system-x86_64 > /dev/null; then
     echo "QEMU chưa được cài đặt, bắt đầu cài đặt..."
