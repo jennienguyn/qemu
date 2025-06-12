@@ -95,7 +95,7 @@ fi
 
 echo "  -net nic,model=$NET_CARD \\" >> "$OUT_FILE"
 echo "  -net user \\" >> "$OUT_FILE"
-echo "  -soundhw $AUDIO_CARD \\" >> "$OUT_FILE"
+echo "  -device $AUDIO_CARD \\" >> "$OUT_FILE"
 echo "  -drive file=$QCOW_NAME,format=qcow2 \\" >> "$OUT_FILE"
 echo "  -cdrom $ISO_NAME \\" >> "$OUT_FILE"
 echo "  -boot d" >> "$OUT_FILE"
