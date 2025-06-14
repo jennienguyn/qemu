@@ -1,76 +1,107 @@
-# QEMU Quick Setup Script
+# Hướng dẫn cài đặt và cấu hình máy ảo QEMU tự động
 
-Script `setup_qemu.sh` giúp bạn tự động cấu hình và khởi tạo một máy ảo QEMU dựa theo cấu hình bạn nhập. Nó hỗ trợ chọn CPU, RAM, card mạng, card âm thanh, giao diện hiển thị và tự động tải file ISO. Cuối cùng, script sẽ tạo một file `.sh` để bạn dễ dàng khởi động máy ảo.
+---
 
-## 🛠 Tính năng
+Tập lệnh Bash này giúp tự động hóa quá trình cài đặt QEMU/KVM và tạo một máy ảo với các tùy chọn cấu hình do người dùng cung cấp.
 
-- Cài đặt QEMU tự động nếu chưa có
-- Tải file ISO từ link bạn nhập (tự động thử lại bằng `curl` nếu `wget` lỗi)
-- Tạo ổ cứng ảo định dạng QCOW2
-- Hỗ trợ cấu hình:
-  - Số nhân CPU
-  - RAM (hỗ trợ định dạng như `2048M`, `2G`, v.v.)
-  - Có hoặc không dùng VNC
-  - Card mạng (gõ `listethernet` để xem danh sách)
-  - Card âm thanh (gõ `listaudio` để xem danh sách)
-- Tạo sẵn file `.sh` để khởi động máy ảo
+---
 
-## 🚀 Hướng dẫn sử dụng
+## Các tính năng chính
 
-### 1. Tải và cấp quyền chạy cho script
+* **Cài đặt tự động:** Tự động cài đặt các gói QEMU, KVM và Libvirt cần thiết.
+* **Kiểm tra KVM:** Xác minh khả năng tương thích của CPU với KVM để đảm bảo hiệu suất tối ưu.
+* **Cấu hình linh hoạt:** Hỏi người dùng các thông số quan trọng cho máy ảo như:
+    * **Số nhân CPU**
+    * **Dung lượng RAM**
+    * **Dung lượng ổ đĩa**
+    * **Sử dụng card mạng Virtio** (để có hiệu suất I/O tốt hơn)
+    * **Sử dụng VNC** để truy cập máy ảo từ xa
+    * **Đường dẫn đến file ISO chính** để cài đặt hệ điều hành
+    * **Khả năng gắn thêm một file ISO phụ** (hữu ích cho driver, công cụ, v.v.)
+* **Tạo ổ đĩa ảo:** Tự động tạo file ổ đĩa ảo (định dạng `qcow2`) với dung lượng được chỉ định.
+* **Khởi động tức thì:** Cung cấp tùy chọn khởi động máy ảo ngay sau khi cấu hình hoàn tất.
 
-```bash
-wget https://yourdomain.com/setup_qemu.sh
-chmod +x setup_qemu.sh
-````
+---
 
-### 2. Chạy script
+## Yêu cầu hệ thống
 
-> ⚠️ Bạn có thể cần chạy với quyền `sudo` nếu QEMU chưa được cài.
+* Hệ điều hành dựa trên Debian/Ubuntu (ví dụ: Ubuntu, Linux Mint).
+* Quyền `sudo` để cài đặt các gói.
+* CPU có hỗ trợ ảo hóa (Intel VT-x hoặc AMD-V) được bật trong BIOS/UEFI để tận dụng KVM.
 
-```bash
-./setup_qemu.sh
+---
+
+## Cách sử dụng
+
+1.  **Lưu tập lệnh:**
+    Lưu nội dung tập lệnh vào một tệp, ví dụ: `setup_qemu_vm.sh`.
+
+    ```bash
+    nano setup_qemu_vm.sh
+    ```
+
+2.  **Cấp quyền thực thi:**
+    Mở Terminal và cấp quyền thực thi cho tệp đã lưu:
+
+    ```bash
+    chmod +x setup_qemu_vm.sh
+    ```
+
+3.  **Chạy tập lệnh:**
+    Thực thi tập lệnh từ Terminal:
+
+    ```bash
+    ./setup_qemu_vm.sh
+    ```
+
+4.  **Làm theo hướng dẫn:**
+    Tập lệnh sẽ hỏi bạn một loạt câu hỏi để cấu hình máy ảo. Hãy nhập các giá trị mong muốn khi được yêu cầu.
+
+    * **Số nhân CPU bạn muốn dùng cho máy ảo:** (ví dụ: `2`)
+    * **Số GB RAM bạn muốn dùng cho máy ảo:** (ví dụ: `4`)
+    * **Dung lượng ổ đĩa (GB) bạn muốn dùng cho máy ảo:** (ví dụ: `50`)
+    * **Bạn có muốn dùng card mạng virtio không? [Y/N]:** (nên chọn `Y` để có hiệu suất tốt hơn)
+    * **Bạn có muốn dùng VNC không? [Y/N]:** (chọn `Y` nếu muốn truy cập máy ảo qua VNC; cổng mặc định là 5900)
+    * **Đường dẫn đến file ISO chính của bạn:** (ví dụ: `/home/user/ubuntu-22.04-desktop-amd64.iso`)
+    * **Bạn có muốn gắn thêm một file ISO nào nữa không? [Y/N]:** (chọn `Y` nếu cần thêm ISO phụ, ví dụ: đĩa driver)
+        * Nếu chọn `Y`, bạn sẽ được hỏi **Đường dẫn đến file ISO phụ của bạn:**
+    * **Bạn có muốn khởi động máy ảo ngay bây giờ không? [Y/N]:**
+
+---
+
+## Ghi chú quan trọng
+
+* **Đường dẫn ISO:** Đảm bảo rằng đường dẫn đến các file ISO là chính xác và các file đó tồn tại trên hệ thống của bạn.
+* **Chế độ mạng:** Tập lệnh sử dụng chế độ mạng **NAT (User Mode)** của QEMU. Đây là cách đơn giản nhất để bắt đầu, nhưng máy ảo sẽ không có địa chỉ IP trực tiếp trên mạng cục bộ của bạn. Để có các cấu hình mạng phức tạp hơn (ví dụ: bridge), bạn sẽ cần cấu hình thủ công sau này.
+* **Truy cập VNC:** Nếu bạn chọn sử dụng VNC, máy ảo sẽ được khởi động với máy chủ VNC trên cổng 5900 (màn hình `:0`). Bạn sẽ cần một **ứng dụng khách VNC** (như Remmina, VNC Viewer) để kết nối đến máy ảo từ máy chủ của mình (thường là `127.0.0.1:5900`).
+* **KVM:** Việc sử dụng KVM là rất quan trọng để có hiệu suất máy ảo tốt. Nếu CPU của bạn không hỗ trợ KVM hoặc KVM chưa được bật trong BIOS/UEFI, máy ảo có thể chạy rất chậm.
+
+---
+
+## Giấy phép
+
+Mã nguồn này được cấp phép theo Giấy phép MIT. Xem file `LICENSE` để biết thêm chi tiết.
+
 ```
-
-### 3. Trả lời các câu hỏi sau:
-
-* Số nhân CPU bạn muốn dùng
-* Dung lượng RAM (ví dụ: `2048M` hoặc `2G`)
-* Có muốn dùng VNC không? (`Y/N`)
-* Card mạng bạn muốn dùng (gõ `listethernet` để xem các lựa chọn)
-* Card âm thanh bạn muốn dùng (gõ `listaudio` để xem các lựa chọn)
-* Dung lượng ổ cứng ảo muốn tạo (ví dụ `150G`)
-* Link tải file ISO
-* Tên file `.sh` đầu ra (ví dụ `run_ubuntu.sh`)
-
-Script sẽ tiến hành tải ISO (dùng `wget`, nếu lỗi sẽ thử `curl`) và tạo script khởi động tương ứng.
-
-### 4. Chạy máy ảo
-
-Sau khi script tạo xong, chạy máy ảo bằng lệnh:
-
-```bash
-./ten_file_ban_nhap.sh
-```
-
-Ví dụ:
-
-```bash
-./run_ubuntu.sh
-```
-
-## 📦 Yêu cầu
-
-* Hệ điều hành: Ubuntu/Debian
-* Gói `qemu-system` (script sẽ tự cài nếu chưa có)
-* Kết nối Internet để tải file ISO
-
-## ❗ Lưu ý
-
-* Nếu bạn nhập `listethernet` hoặc `listaudio`, script sẽ liệt kê các thiết bị tương ứng rồi yêu cầu bạn nhập lại.
-* Nếu tải ISO thất bại cả bằng `wget` và `curl`, script sẽ dừng với thông báo lỗi.
-* Ổ đĩa ảo và file ISO sẽ nằm trong cùng thư mục với script.
-
-## 📃 License
-
 MIT License
+
+Copyright (c) 2025 Jennie Nguyen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
