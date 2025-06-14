@@ -88,6 +88,7 @@ else
 fi
 SECONDARY_ISO_ARG=""
 if [[ "$add_secondary_iso" == "y" ]]; then
+    # Đã thêm lại dòng này để hỏi đường dẫn ISO phụ
     read -p "Đường dẫn đến file ISO phụ của bạn (có thể là đường dẫn cục bộ hoặc URL): " secondary_iso_input
     secondary_iso_path=""
     if [[ "$secondary_iso_input" =~ ^https?:// ]]; then
